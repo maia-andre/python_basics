@@ -10,8 +10,8 @@ print(fabricas_df.head())
 
 fabricas = [
     (fabricas_df['LAT'][0], fabricas_df['LONG'][0]),  # Fabrica Itu
-    (fabricas_df['LAT'][1], fabricas_df['LONG'][1]),  # Fabrica Ara
-    (fabricas_df['LAT'][2], fabricas_df['LONG'][2]),  # Fabrica Jac
+    (fabricas_df['LAT'][1], fabricas_df['LONG'][1]),  # Fabrica Araraquara
+    (fabricas_df['LAT'][2], fabricas_df['LONG'][2]),  # Fabrica Jacareí
 ]
 
 for i, fabrica in enumerate(fabricas):
