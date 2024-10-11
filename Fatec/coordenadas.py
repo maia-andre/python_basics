@@ -1,8 +1,8 @@
 import pandas as pd
 from geopy.distance import geodesic
 
-clientes_df = pd.read_csv('1 - Clientes.csv')
-fabricas_df = pd.read_csv('2 - Fabricas.csv', encoding='latin1')
+clientes_df = pd.read_csv('fatec/1 - Clientes.csv')
+fabricas_df = pd.read_csv('fatec/2 - Fabricas.csv', encoding='latin1')
 
 print(clientes_df.head())
 
@@ -19,3 +19,4 @@ for i, fabrica in enumerate(fabricas):
         cliente_coord = (cliente['LAT'], cliente['LONG'])
         distancia = geodesic(fabrica, cliente_coord).kilometers
         print(f"Fábrica {i + 1} x Cliente {j + 1} = {distancia:.2f} km")
+
