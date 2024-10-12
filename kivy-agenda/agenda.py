@@ -5,6 +5,31 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.scrollview import ScrollView
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# Configuração do banco de dados
+Base = declarative_base()
+engine = create_engine('sqlite:///solicitacoes.db')
+Session = sessionmaker(bind=engine)
+
+# Modelo para a tabela de solicitações
+class Solicitation(Base):
+    __tablename__ = 'solicitations'
+    id = Column(Integer, primary_key=True)
+    matricula = Column(String)
+    nome_solicitante = Column(String)
+    data_viagem = Column(String)
+    origem = Column(String)
+    destino = Column(String)
+    hora_saida = Column(String)
+    previsao_retorno = Column(String)
+    quantidade_passageiros = Column(Integer)
+    observacoes = Column(String)
+
+# Criar as tabelas no banco de dados
+Base.metadata.create_all(engine)
 
 # Classe para a tela de boas-vindas
 class WelcomeScreen(Screen):
@@ -47,9 +72,6 @@ class HomeScreen(Screen):
 
 # Classe para agendar veículo
 class AgendarScreen(Screen):
-    solicitacoes = []  # Lista para armazenar as solicitações
-    contador = 1  # Contador para o número da solicitação
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical')
@@ -68,14 +90,28 @@ class AgendarScreen(Screen):
         self.add_widget(layout)
 
     def solicitar(self, instance):
+        session = Session()
         viagem = {field: input_field.text for field, input_field in self.inputs.items()}
         matricula = self.manager.matricula
-        viagem['matricula'] = matricula
-        viagem['numero_solicitacao'] = AgendarScreen.contador
         
-        print(f"Solicitação {AgendarScreen.contador}: {viagem}")  # Imprime a solicitação no console
-        AgendarScreen.solicitacoes.append(viagem)  # Armazena a solicitação
-        AgendarScreen.contador += 1  # Incrementa o contador
+        # Criação da solicitação e adição ao banco de dados
+        nova_solicitacao = Solicitation(
+            matricula=matricula,
+            nome_solicitante=viagem['Nome do solicitante'],
+            data_viagem=viagem['Data da viagem'],
+            origem=viagem['Origem'],
+            destino=viagem['Destino'],
+            hora_saida=viagem['Hora de saída'],
+            previsao_retorno=viagem['Previsão de retorno'],
+            quantidade_passageiros=int(viagem['Quantidade de passageiros']),
+            observacoes=viagem['Observações (opcional)']
+        )
+        
+        session.add(nova_solicitacao)
+        session.commit()
+        session.close()
+        
+        print(f"Solicitação adicionada ao banco de dados: {viagem}")
 
         # Limpa os campos após a solicitação
         for input_field in self.inputs.values():
@@ -106,32 +142,34 @@ class ConsultarScreen(Screen):
         self.add_widget(layout)
 
     def on_enter(self):
+        session = Session()
         matricula = self.manager.matricula
-        solicitacoes = [s for s in AgendarScreen.solicitacoes if s['matricula'] == matricula]
+        solicitacoes = session.query(Solicitation).filter_by(matricula=matricula).all()
+        session.close()
         
         # Limpa os pedidos anteriores ao entrar na tela
         self.content.clear_widgets()
-        self.content.add_widget(self.label)  # Adiciona o label de volta
+        self.content.add_widget(self.label)
 
         if solicitacoes:
             for s in solicitacoes:
                 pedido_label = Label(
-                    text=f"Solicitação {s['numero_solicitacao']}:\n"
-                          f"Nome: {s['Nome do solicitante']}\n"
-                          f"Data: {s['Data da viagem']}\n"
-                          f"Origem: {s['Origem']}\n"
-                          f"Destino: {s['Destino']}\n"
-                          f"Hora de saída: {s['Hora de saída']}\n"
-                          f"Previsão de retorno: {s['Previsão de retorno']}\n"
-                          f"Quantidade de passageiros: {s['Quantidade de passageiros']}\n"
-                          f"Observações: {s['Observações (opcional)']}\n"
+                    text=f"Solicitação {s.id}:\n"
+                          f"Nome: {s.nome_solicitante}\n"
+                          f"Data: {s.data_viagem}\n"
+                          f"Origem: {s.origem}\n"
+                          f"Destino: {s.destino}\n"
+                          f"Hora de saída: {s.hora_saida}\n"
+                          f"Previsão de retorno: {s.previsao_retorno}\n"
+                          f"Quantidade de passageiros: {s.quantidade_passageiros}\n"
+                          f"Observações: {s.observacoes}\n"
                           f"-----------------------------------",
                     size_hint_y=None,
                     height=200,
-                    halign='left',  # Alinhamento à esquerda
-                    valign='top'  # Alinhamento vertical no topo
+                    halign='left',
+                    valign='top'
                 )
-                pedido_label.bind(size=pedido_label.setter('text_size'))  # Permite quebra de linha
+                pedido_label.bind(size=pedido_label.setter('text_size'))
                 self.content.add_widget(pedido_label)
         else:
             self.content.add_widget(Label(text=f'Sem pedidos para matrícula {matricula}.', size_hint_y=None, height=40))
