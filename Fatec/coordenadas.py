@@ -3,10 +3,11 @@ from geopy.distance import geodesic
 
 clientes_df = pd.read_csv('fatec/1 - Clientes.csv')
 fabricas_df = pd.read_csv('fatec/2 - Fabricas.csv', encoding='latin1')
+rotas_df = pd.read_csv('fatec/3 - Rotas.csv')
 
 print(clientes_df.head())
-
 print(fabricas_df.head())
+print(rotas_df.head())
 
 fabricas = [
     (fabricas_df['LAT'][0], fabricas_df['LONG'][0]),  # Fabrica Itu
