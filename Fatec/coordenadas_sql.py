@@ -1,118 +1,109 @@
 import pandas as pd
-from geopy.distance import geodesic
 from sqlalchemy import create_engine
-from fpdf import FPDF
 import mysql.connector
+
+# Ler os arquivos CSV
+clientes_df = pd.read_csv('fatec/1 - Clientes.csv')
+fabricas_df = pd.read_csv('fatec/2 - Fabricas.csv', encoding='latin1')
+rotas_df = pd.read_csv('fatec/3 - Rotas.csv')
+
+# Renomear colunas dos DataFrames para garantir a padronização
+clientes_df.rename(columns={
+    'Cliente': 'CO_Cliente',
+    'MUN': 'MUN',
+    'LAT': 'LAT',
+    'LON': 'LON' # LONG é um termo próprio no SQL - não deve ser usado para não gerar conflitos
+}, inplace=True)
+
+fabricas_df.rename(columns={
+    'Fabrica': 'CO_Fabrica',
+    'NO_MUN': 'NO_MUN',
+    'NO_MUN_MIN': 'NO_MUN_MIN',
+    'SG_UF': 'SG_UF',
+    'LAT': 'LAT',
+    'LONG': 'LON'  # LONG é um termo próprio no SQL - não deve ser usado para não gerar conflitos
+}, inplace=True)
 
 # Configuração da conexão com o banco de dados MySQL
 db_connection = mysql.connector.connect(
     host='localhost',
-    user='root',        # substitua pelo seu usuário
-    password='071259Aa!',      # substitua pela sua senha
+    user='root',  # substitua pelo seu usuário
+    password='071259Aa!',  # substitua pela sua senha
     auth_plugin='mysql_native_password'
 )
 
 cursor = db_connection.cursor()
 
 # Criar banco de dados
-cursor.execute("CREATE DATABASE IF NOT EXISTS sua_base_de_dados")
-cursor.execute("USE sua_base_de_dados")
+cursor.execute("CREATE DATABASE IF NOT EXISTS fatec_api")
+cursor.execute("USE fatec_api")
 
-# Criar tabelas
+# Criar tabela Clientes
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS Clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    CO_Cliente INT,
+    MUN VARCHAR(255),
     LAT FLOAT,
     LON FLOAT
 )
 """)
 
+# Criar tabela Fabricas
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS Fabricas (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    CO_Fabrica INT,
+    NO_MUN VARCHAR(255),
+    NO_MUN_MIN VARCHAR(255),
+    SG_UF VARCHAR(10),
     LAT FLOAT,
     LON FLOAT
 )
 """)
 
+# Criar tabela Rotas
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS Rotas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    origem VARCHAR(255),
-    destino VARCHAR(255),
-    distancia FLOAT
+    Dt_Pedido DATE,
+    Dt_Emissao DATE,
+    Dt_Entrega DATE,
+    Mes_Base INT,
+    Ano_Exec INT,
+    CO_Fabrica INT,
+    CO_Cliente INT,
+    Incoterm VARCHAR(255),
+    Veiculo VARCHAR(255),
+    Qtd_pallets INT,
+    Qtd_Transp INT,
+    Moeda VARCHAR(10),
+    Vlr_Frete DECIMAL(10, 2)
 )
 """)
 
-# Fechar a conexão
+# Fechar a conexão do cursor
 db_connection.commit()
 cursor.close()
 
-# Conexão com o banco de dados usando SQLAlchemy para consultas
-engine = create_engine('mysql+mysqlconnector://root:071259Aa!@localhost/sua_base_de_dados')
-
-# Inserir dados de exemplo (caso não existam)
-clientes_data = [
-    (-23.456, -47.456),  # Cliente 1
-    (-22.567, -48.567)   # Cliente 2
-]
-
-fabricas_data = [
-    (-23.123, -47.123),  # Fábrica Itu
-    (-22.123, -48.123),  # Fábrica Araraquara
-    (-23.345, -45.678)   # Fábrica Jacareí
-]
+# Conexão com o banco de dados usando SQLAlchemy
+engine = create_engine('mysql+mysqlconnector://root:071259Aa!@localhost/fatec_api')
 
 # Inserir dados nas tabelas
-db_connection = mysql.connector.connect(
-    host='localhost',
-    user='root',        # substitua pelo seu usuário
-    password='071259Aa!',      # substitua pela sua senha
-    auth_plugin='mysql_native_password',
-    database='sua_base_de_dados'
-)
+clientes_df.to_sql('Clientes', con=engine, if_exists='append', index=False)
+fabricas_df.to_sql('Fabricas', con=engine, if_exists='append', index=False)
+rotas_df.to_sql('Rotas', con=engine, if_exists='append', index=False)
 
-for lat, lon in clientes_data:
-    cursor = db_connection.cursor()
-    cursor.execute("INSERT INTO Clientes (LAT, LON) VALUES (%s, %s)", (lat, lon))
-
-for lat, lon in fabricas_data:
-    cursor = db_connection.cursor()
-    cursor.execute("INSERT INTO Fabricas (LAT, LON) VALUES (%s, %s)", (lat, lon))
-
-db_connection.commit()
-db_connection.close()
+# Formatar datas para a tabela Rotas
+rotas_df['Dt_Pedido'] = pd.to_datetime(rotas_df['Dt_Pedido'], format='%d/%m/%y')
+rotas_df['Dt_Emissao'] = pd.to_datetime(rotas_df['Dt_Emissao'], format='%d/%m/%y')
+rotas_df['Dt_Entrega'] = pd.to_datetime(rotas_df['Dt_Entrega'], format='%d/%m/%y')
 
 print("Dados inseridos com sucesso!")
 
 # Consultar os dados
 clientes_df = pd.read_sql('SELECT * FROM Clientes', engine)
 fabricas_df = pd.read_sql('SELECT * FROM Fabricas', engine)
+rotas_df = pd.read_sql('SELECT * FROM Rotas', engine)
 
-fabricas = [
-    (fabricas_df['LAT'][0], fabricas_df['LON'][0]),  # Fábrica Itu
-    (fabricas_df['LAT'][1], fabricas_df['LON'][1]),  # Fábrica Araraquara
-    (fabricas_df['LAT'][2], fabricas_df['LON'][2]),  # Fábrica Jacareí
-]
-
-# Criar um PDF
-pdf = FPDF()
-pdf.add_page()
-pdf.set_font("Arial", size=12)
-
-# Adicionar título
-pdf.cell(200, 10, txt="Distâncias entre Fábricas e Clientes", ln=True, align='C')
-
-# Calcular e adicionar distâncias ao PDF
-for i, fabrica in enumerate(fabricas):
-    for j, cliente in clientes_df.iterrows():
-        cliente_coord = (cliente['LAT'], cliente['LON'])
-        distancia = geodesic(fabrica, cliente_coord).kilometers
-        resultado = f"Fábrica {i + 1} x Cliente {j + 1} = {distancia:.2f} km"
-        print(resultado)  # Imprime no console
-        pdf.cell(0, 10, txt=resultado, ln=True)
-
-# Salvar o PDF
-pdf.output("distancias.pdf")
-
-print("PDF gerado com sucesso!")
+print("Consulta realizada com sucesso!")

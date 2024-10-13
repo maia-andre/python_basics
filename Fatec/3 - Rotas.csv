@@ -1,4 +1,4 @@
-﻿Dt.Pedido,Dt.Emissao,Dt.Entrega,Mes.Base,Ano.Exec,CO.Fabrica,CO.Cliente,Incoterm,Veiculo,Qtd/pallets,Qtd.Transp,Moeda,Vlr.Frete
+﻿Dt_Pedido,Dt_Emissao,Dt_Entrega,Mes_Base,Ano_Exec,CO_Fabrica,CO_Cliente,Incoterm,Veiculo,Qtd_pallets,Qtd_Transp,Moeda,Vlr_Frete
 06/01/23,17/01/23,22/01/23,1,2023,3424402,2351,CIF,P12,12,1500,BRL,2235.025
 
 30/12/22,10/01/23,13/01/23,1,2023,3424402,2351,FOB,P24,24,2400,BRL,0
