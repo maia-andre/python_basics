@@ -28,7 +28,7 @@ fabricas_df.rename(columns={
 db_connection = mysql.connector.connect(
     host='localhost',
     user='root',  # substitua pelo seu usuário
-    password='071259Aa!',  # substitua pela sua senha
+    password='xxxxxx',  # substitua pela sua senha
     auth_plugin='mysql_native_password'
 )
 
@@ -87,7 +87,7 @@ db_connection.commit()
 cursor.close()
 
 # Conexão com o banco de dados usando SQLAlchemy
-engine = create_engine('mysql+mysqlconnector://root:071259Aa!@localhost/fatec_api')
+engine = create_engine('mysql+mysqlconnector://root:xxxxxx@localhost/fatec_api')
 
 # Inserir dados nas tabelas
 clientes_df.to_sql('Clientes', con=engine, if_exists='append', index=False)
