@@ -87,7 +87,7 @@ db_connection.commit()
 cursor.close()
 
 # Conexão com o banco de dados usando SQLAlchemy
-engine = create_engine('mysql+mysqlconnector://root:071259Aa!@localhost/fatec_api')
+engine = create_engine('mysql+mysqlconnector://root:xxxxxx@localhost/fatec_api')
 
 # Inserir dados nas tabelas
 clientes_df.to_sql('Clientes', con=engine, if_exists='append', index=False)
