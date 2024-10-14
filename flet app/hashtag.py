@@ -1,22 +1,9 @@
-# Tela Inicial
-    # Título: Hashzap
-    # Botão: Iniciar Chat
-        # quando clicar no botão:
-        # abrir um popup/alerta/modal
-            # Título: Bem vindo ao hashzap
-            # Caixa de texto: Escreva seu nome no chat
-            # Botão: Entrar no chat
-                # quando clicar no botão
-                # sumir com o título
-                # sumir com o popup
-                # sumir com o botão de iniciar chat
-                    # carregar o chat
-                    # carregar o campo de enviar mensagem "Digite sua mensagem"
                     # botão enviar
                         # quando clicar no botão enviar
                         # enviar mensagem
                         # limpar a caixa de mensagem
 
+# websocket = tunel de comunicação entre dois usuários
 # 3 passos para usar o flet: importar o flet, função principal para o app e executar essa função com flet
 
 import flet as ft
@@ -25,9 +12,19 @@ def main(pagina):
     # titulo
     titulo = ft.Text("Hashzap")
     
-    def enviar_mensagem(evento):
-        texto = ft.Text(campo_enviar_mensagem.value)
+    def enviar_mensagem_tunel(mensagem):
+        texto = ft.Text(mensagem)
         chat.controls.append(texto)
+        pagina.update()
+
+    pagina.pubsub.subscribe(enviar_mensagem_tunel)
+
+    def enviar_mensagem(evento):
+        nome_usuario = caixa_nome.value
+        texto_campo_mensagem = campo_enviar_mensagem.value
+        mensagem = f"{nome_usuario}: {texto_campo_mensagem}"
+        pagina.pubsub.send_all(mensagem)
+        campo_enviar_mensagem.value = ""
         pagina.update()
 
     campo_enviar_mensagem = ft.TextField(label="Digite aqui sua mensagem", on_submit=enviar_mensagem)
@@ -43,6 +40,9 @@ def main(pagina):
         pagina.remove(botao)
         pagina.add(chat)
         pagina.add(linha_enviar)
+        nome_usuario = caixa_nome.value
+        mensagem = f"{nome_usuario} entrou no chat"
+        pagina.pubsub.send_all(mensagem)
         pagina.update()
         
     # criar popup
