@@ -28,7 +28,7 @@ fabricas_df.rename(columns={
 db_connection = mysql.connector.connect(
     host='localhost',
     user='root',  # substitua pelo seu usuário
-    password='071259Aa!',  # substitua pela sua senha
+    password='xxxxxx',  # substitua pela sua senha
     auth_plugin='mysql_native_password'
 )
 
