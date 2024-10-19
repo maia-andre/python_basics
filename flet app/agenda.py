@@ -44,7 +44,22 @@ def main(pagina):
         hora_retorno = caixa_retorno.value
         quantidade = caixa_qtde.value
         observacao = caixa_obs.value
-        
+
+    #tabela - cabeçalho com 11 colunas
+    # status
+    # motorista
+    # veículo
+    # solicitante
+    # data da viagem
+    # origem
+    # destino
+    # hora de saída
+    # retorno previsto
+    # quantidade de passageiros
+    # observações
+    # 2 ícones - alterar e excluir
+    # 3 pontinhos para abrir opção de alterar
+
         # Cria a linha da tabela com os valores
         linha = ft.DataRow(cells=[
             ft.DataCell(ft.Text(nome_solicitante)),
@@ -79,6 +94,7 @@ def main(pagina):
     botao_solicitar = ft.ElevatedButton("Solicitar viagem!", on_click=salvar_viagem)
 
     # Criando o popup
+        # botão solicitar insere as 8 informações na tabela
     popup = ft.AlertDialog(
         title=titulo_popup,
         content=ft.Column([
@@ -120,29 +136,15 @@ def main(pagina):
 
 
 # Inicializa o aplicativo Flet como um app web
-ft.app(target=main)  # ou ft.WEB para rodar em um servidor
+ft.app(target=main)
 
 
-        # botão confirmar
-            # insere as 8 informações na tabela
+
+
  # Botão Admin 
     # irá abrir um modal que irá solicitar um código
     # a inserção do código irá permitir o admin alterar ou excluir viagens na última coluna
     
-#tabela - cabeçalho com 11 colunas
- # status
- # motorista
- # veículo
- # solicitante
- # data da viagem
- # origem
- # destino
- # hora de saída
- # retorno previsto
- # quantidade de passageiros
- # observações
- # 2 ícones - alterar e excluir
-    # os ícones vão ser "clicáveis" apenas para o administrador
 
     
 
