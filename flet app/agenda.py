@@ -120,7 +120,7 @@ def main(pagina):
 
 
 # Inicializa o aplicativo Flet como um app web
-ft.app(target=main, view=ft.WEB_BROWSER)  # ou ft.WEB para rodar em um servidor
+ft.app(target=main)  # ou ft.WEB para rodar em um servidor
 
 
         # botão confirmar
@@ -146,4 +146,3 @@ ft.app(target=main, view=ft.WEB_BROWSER)  # ou ft.WEB para rodar em um servidor
 
     
 
-ft.app(main)
