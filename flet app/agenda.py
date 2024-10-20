@@ -1,21 +1,57 @@
 import flet as ft
+import datetime as dt
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# Configurações do SQLAlchemy para conexão com o MySQL
+DATABASE_URL = "mysql+pymysql://root:xxxxxx@localhost/transporte"  # Ajuste conforme o seu MySQL
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Definir base do SQLAlchemy
+Base = declarative_base()
+
+# Definir modelo de dados para Viagem
+class Viagem(Base):
+    __tablename__ = 'viagens'
+
+    id = Column(Integer, primary_key=True)
+    nome = Column(String(100))
+    data = Column(String(50))
+    origem = Column(String(100))
+    destino = Column(String(100))
+    hora_saida = Column(String(50))
+    hora_retorno = Column(String(50))
+    quantidade = Column(Integer)
+    observacao = Column(String(200))
+    motorista = Column(String(100))
+    veiculo = Column(String(100))
+    status = Column(String(50))
+
+# Cria as tabelas no banco de dados, caso ainda não existam
+Base.metadata.create_all(engine)
+
+def carregar_viagens():
+    # Carregar viagens do banco de dados
+    return session.query(Viagem).all()
 
 def main(pagina):
     # Título
     titulo = ft.Text("Secretaria da Educação - Agenda do Transporte", size=30, weight="bold")
     
     # Logo com ajuste de tamanho
-    logo = ft.Image(src="flet app/logo.png", width=100, height=100)  # Ajuste os valores conforme necessário
+    logo = ft.Image(src="flet app/logo.png", width=100, height=100)
     
     # Adicionando o logo à esquerda e o título ao lado
-    row = ft.Row([logo, titulo], alignment="center")  # Centraliza a linha
-
-    # Adicionando a linha à página
+    row = ft.Row([logo, titulo], alignment="center")
     pagina.add(row)
 
     # Criação da tabela
     colunas = [
-        ft.DataColumn(ft.Text("Nome")),
+        ft.DataColumn(ft.Text("Selecionar")),
+        ft.DataColumn(ft.Text("Nome")),  
         ft.DataColumn(ft.Text("Data")),
         ft.DataColumn(ft.Text("Origem")),
         ft.DataColumn(ft.Text("Destino")),
@@ -34,7 +70,7 @@ def main(pagina):
     def salvar_viagem(evento):
         # Fecha o popup
         popup.open = False
-        
+
         # Recupera os valores digitados pelo usuário
         nome_solicitante = caixa_nome.value
         data_viagem = caixa_data.value
@@ -45,40 +81,40 @@ def main(pagina):
         quantidade = caixa_qtde.value
         observacao = caixa_obs.value
 
-    #tabela - cabeçalho com 11 colunas
-    # status
-    # motorista
-    # veículo
-    # solicitante
-    # data da viagem
-    # origem
-    # destino
-    # hora de saída
-    # retorno previsto
-    # quantidade de passageiros
-    # observações
-    # 2 ícones - alterar e excluir
-    # 3 pontinhos para abrir opção de alterar
+        # Salva no banco de dados
+        nova_viagem = Viagem(
+            nome=nome_solicitante,
+            data=data_viagem,
+            origem=origem,
+            destino=destino,
+            hora_saida=hora_saida,
+            hora_retorno=hora_retorno,
+            quantidade=quantidade,
+            observacao=observacao,
+            motorista="",
+            veiculo="",
+            status="Pendente"
+        )
+        session.add(nova_viagem)
+        session.commit()
 
-        # Cria a linha da tabela com os valores
-        linha = ft.DataRow(cells=[
-            ft.DataCell(ft.Text(nome_solicitante)),
-            ft.DataCell(ft.Text(data_viagem)),
-            ft.DataCell(ft.Text(origem)),
-            ft.DataCell(ft.Text(destino)),
-            ft.DataCell(ft.Text(hora_saida)),
-            ft.DataCell(ft.Text(hora_retorno)),
-            ft.DataCell(ft.Text(quantidade)),
-            ft.DataCell(ft.Text(observacao)),
-            ft.DataCell(ft.Text("")),  # Motorista (vazio por enquanto)
-            ft.DataCell(ft.Text("")),  # Veículo (vazio por enquanto)
-            ft.DataCell(ft.Text("Pendente"))  # Status inicial como "Pendente"
+        # Adiciona a nova linha à tabela na interface
+        linha = ft.DataRow(cells=[    
+            ft.DataCell(ft.Checkbox()),  # Adiciona checkbox
+            ft.DataCell(ft.Container(content=ft.Text(nome_solicitante, no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text(data_viagem, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(origem, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text(destino, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text(hora_saida, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(hora_retorno, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(quantidade, no_wrap=False), width=50)),
+            ft.DataCell(ft.Container(content=ft.Text(observacao, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text("", no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text("", no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text("Pendente", no_wrap=False), width=80))
         ])
         
-        # Adiciona a nova linha à tabela
         tabela.rows.append(linha)
-        
-        # Atualiza a tabela na página
         pagina.update()
 
     # Criar solicitação
@@ -93,11 +129,10 @@ def main(pagina):
     caixa_obs = ft.TextField(label="Observações")
     botao_solicitar = ft.ElevatedButton("Solicitar viagem!", on_click=salvar_viagem)
 
-    # Criando o popup
-        # botão solicitar insere as 8 informações na tabela
+    # Criando o popup para solicitação
     popup = ft.AlertDialog(
         title=titulo_popup,
-        content=ft.Column([
+        content=ft.Column([    
             caixa_nome,
             caixa_data,
             caixa_origem,
@@ -121,25 +156,93 @@ def main(pagina):
         caixa_qtde.value = ""
         caixa_obs.value = ""
         
-        pagina.dialog = popup
+        pagina.overlay.append(popup)  # Altera para usar overlay
         popup.open = True
         pagina.update()
 
+    # Popup de senha para administrador
+    def abrir_popup_admin(evento):
+        # Cria o popup de senha
+        senha_input = ft.TextField(label="Digite a senha", password=True)
+
+        senha_popup = ft.AlertDialog(
+            title=ft.Text("Acesso Administrativo"),
+            content=ft.Column([
+                senha_input,
+            ]),
+            actions=[
+                ft.ElevatedButton("Confirmar", on_click=lambda e: validar_senha(senha_input, senha_popup))
+            ]
+        )
+        
+        pagina.overlay.append(senha_popup)  # Altera para usar overlay
+        senha_popup.open = True
+        pagina.update()
+
+    # Validação da senha
+    def validar_senha(senha_input, senha_popup):
+        if senha_input.value == "sua_senha":  # Substitua "sua_senha" pela senha real
+            # Atualiza a tabela para adicionar checkboxes
+            for linha in tabela.rows:
+                # Adiciona um checkbox em cada linha existente, se ainda não houver
+                if len(linha.cells) < len(colunas):
+                    linha.cells.insert(0, ft.DataCell(ft.Checkbox()))
+
+            # Atualiza a tabela após adicionar os checkboxes
+            tabela.update()
+
+            # Adiciona linha de botões
+            nova_linha = ft.Row([
+                ft.ElevatedButton("Alterar Viagem"),
+                ft.ElevatedButton("Duplicar Viagem"),
+                ft.ElevatedButton("Excluir Viagem"),
+            ], alignment="center")
+
+            # Adiciona os botões logo abaixo da linha de botões de solicitar e admin
+            pagina.add(nova_linha)  
+            pagina.update()
+
+        # Fecha o popup de senha
+        senha_popup.open = False
+        pagina.update()
+
+    # Botão para admin
+    botao_admin = ft.ElevatedButton("Modo Administrador", on_click=abrir_popup_admin)
+
     # 2 botões na mesma linha 
     botao_criar = ft.ElevatedButton("Criar Solicitação", on_click=abrir_popup)
-    botao_admin = ft.ElevatedButton("Modo Administrador")
     linha_botoes = ft.Row([botao_criar, botao_admin], alignment="center")
     
-    # Adiciona a tabela e os botões à página
-    pagina.add(linha_botoes)   
+    # Adiciona os botões à página
+    pagina.add(linha_botoes)
+
+    # Carregar e adicionar as viagens à tabela
+    viagens = carregar_viagens()
+    for viagem in viagens:
+        linha = ft.DataRow(cells=[
+            ft.DataCell(ft.Checkbox()),  # Adiciona checkbox
+            ft.DataCell(ft.Container(content=ft.Text(viagem.nome, no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.data, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.origem, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.destino, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.hora_saida, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.hora_retorno, no_wrap=False), width=80)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.quantidade, no_wrap=False), width=50)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.observacao, no_wrap=False), width=150)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.motorista, no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.veiculo, no_wrap=False), width=100)),
+            ft.DataCell(ft.Container(content=ft.Text(viagem.status, no_wrap=False), width=80)),
+        ])
+        tabela.rows.append(linha)
+
+    # Adiciona a tabela à página
     pagina.add(tabela)
 
+    # Atualiza a página
+    pagina.update()
 
 # Inicializa o aplicativo Flet como um app web
 ft.app(target=main)
-
-
-
 
  # Botão Admin 
     # irá abrir um modal que irá solicitar um código
